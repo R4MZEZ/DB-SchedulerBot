@@ -33,7 +33,7 @@ class Equipment(Base):
 class ClassroomEquipment(Base):
     __tablename__ = "ОСНАЩЕНИЕ_АУДИТОРИИ"
 
-    eq_id = Column("ОБОРУД_ИД", ForeignKey("ТИПЫ_ОБОРУДОВАНИЯ.ИД"))
+    eq_id = Column("ОБОРУД_ИД", ForeignKey("ТИПЫ_ОБОРУДОВАНИЯ.ИД"), primary_key=True)
     class_id = Column("АУД_ИД", ForeignKey("АУДИТОРИИ.ИД"))
 
 
@@ -42,7 +42,7 @@ class Group(Base):
 
     id = Column("ИД", BigInteger, Sequence('group_seq'),
                 primary_key=True, index=True)
-    code = Column(String)
+    code = Column("КОД_ГРУППЫ", String)
     stud_count = Column("КОЛВО_ЛЮДЕЙ", Integer)
 
 
@@ -71,8 +71,11 @@ class Teacher(Base):
                 primary_key=True, index=True)
     code = Column("КОД_ПРЕДМЕТА", BigInteger, ForeignKey("ДИСЦИПЛИНЫ.ИД"))
     name = Column("ИМЯ", String)
-    surname = Column("ИМЯ", String)
+    surname = Column("ФАМИЛИЯ", String)
     patronymic = Column("ОТЧЕСТВО", String)
+
+    def __repr__(self):
+        return f"{self.surname} {self.name[0]}. {self.patronymic[0]}."
 
 
 class Schedule(Base):
@@ -82,8 +85,28 @@ class Schedule(Base):
                 primary_key=True, index=True)
     classroom_id = Column("АУД_ИД", BigInteger, ForeignKey("АУДИТОРИИ.ИД"))
     discipline_id = Column("КОД_ПРЕДМЕТА", BigInteger, ForeignKey("ДИСЦИПЛИНЫ.ИД"))
-    group_id = Column("УЧ_ИД", BigInteger, ForeignKey("УЧИТЕЛЯ.ИД"))
+    teacher_id = Column("УЧ_ИД", BigInteger, ForeignKey("УЧИТЕЛЯ.ИД"))
+    group_id = Column("ГРУППА", BigInteger, ForeignKey("ГРУППЫ.ИД"))
     lesson_number = Column("НОМЕР_ПАРЫ", BigInteger, ForeignKey("АКАДЕМ_ЧАС.ИД"))
     weekday = Column("ДЕНЬ_НЕДЕЛИ", Integer)
     parity = Column("ЧЕТНОСТЬ", Integer, default=2)
     date = Column("ДАТА", Date)
+
+
+class ScheduleView(Base):
+    __tablename__ = "_schedule_view"
+
+    classroom = Column("classroom", String)
+    discipline = Column("discipline", String)
+    teacher_name = Column("teacher_name", String)
+    teacher_surname = Column("teacher_surname", String)
+    teacher_patronymic = Column("teacher_patronymic", String)
+    group = Column("group", String)
+    begin_time = Column("begin_time", Time)
+    end_time = Column("end_time", Time)
+    weekday = Column("week_day", Integer)
+    parity = Column("parity", Integer, default=2)
+    date = Column("lesson_date", Date, primary_key=True)
+
+    def __repr__(self):
+        return str(self.__dict__)
