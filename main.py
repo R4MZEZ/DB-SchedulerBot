@@ -35,7 +35,7 @@ async def process_start_command(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=States.stud_default_state, content_types=ContentTypes.TEXT)
 async def def_stud_handler(message: types.Message, state: FSMContext):
-    if message.text == "Посмотреть расписание":
+    if message.text == "Посмотреть расписание":  # TODO вывод пар по дате, вывод корпуса
         data = await state.get_data()
         if "group" in data.keys():
             weekday = await get_weekday() + 1
@@ -73,9 +73,9 @@ async def def_teacher_handler(message: types.Message, state: FSMContext):
     if message.text == "Посмотреть расписание":
         data = await state.get_data()
         if "teacher" in data.keys():
-            await message.answer("Я еще не научился расписание выводить :(")
+            await message.answer("Я еще не научился расписание выводить :(")  # TODO
         else:
-            await message.answer("У тебя не выбрана группа!")
+            await message.answer("У тебя не выбран преподаватель")
     elif message.text == "Сменить преподавателя":
         await message.answer("Список доступных преподавателей:")
         await message.answer(await db.get_teachers())
@@ -94,7 +94,7 @@ async def def_teacher_handler(message: types.Message, state: FSMContext):
 async def handle_choose_teacher(message: types.Message, state: FSMContext):
     if await db.teacher_exists(message.text):
         await state.update_data(teacher=await db.teacher_id_by_name(message.text))
-        await message.answer("Преподавтель установлен: " + message.text, reply_markup=get_default_teacher_kb())
+        await message.answer("Преподаватель установлен: " + message.text, reply_markup=get_default_teacher_kb())
         await state.set_state(States.teacher_default_state)
     else:
         await message.answer("Такого преподавателя не существует.")
@@ -108,32 +108,7 @@ async def schedule_command(message: types.Message):
 
 @dp.callback_query_handler(lambda c: c.data in ["prev", "next"], state="*")
 async def prev_next_handler(callback_query: types.CallbackQuery, state: FSMContext):
-    day, month, parity, weekday = callback_query.message.text.split()[:4]
-    month = months.index(month[:-1])
-    parity = parities.index(parity[:-1])
-    weekday = weekdays.index(weekday)
-
-    year = datetime.date.today().year
-    day = day if len(day) == 2 else "0" + str(day)
-    date = datetime.date.fromisoformat(str(year) + "-" + str(month + 1) + "-" + str(day))
-
-    if callback_query.data == "next":
-        date += datetime.timedelta(days=1)
-        if weekday == 6:
-            weekday = 0
-            parity = not parity
-        else:
-            weekday += 1
-    else:
-        date += datetime.timedelta(days=-1)
-        if weekday == 0:
-            weekday = 6
-            parity = not parity
-        else:
-            weekday -= 1
-
-    weekday += 1  # because in bd they are 1-7
-    parity += 1  # same because 1-2 in bd
+    date, day, month, parity, weekday = await get_datetime_from_callback(callback_query)
 
     data = await state.get_data()
     res = await db.get_schedule_by_weekday(data["group"], weekday, parity)

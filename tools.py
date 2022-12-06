@@ -1,5 +1,7 @@
 import datetime as dt
 
+from aiogram import types
+
 from database_tools.entities import ScheduleView
 
 weekdays = ["понедельник",
@@ -9,7 +11,6 @@ weekdays = ["понедельник",
             "пятница",
             "суббота",
             "воскресенье"]
-
 
 months = ["января",
           "февраля",
@@ -37,7 +38,7 @@ async def get_parity(date=dt.datetime.today()) -> int:
 
 
 async def stringify_schedule_list(_list: list[ScheduleView], date=dt.datetime.today()) -> str:
-    result = f"{date.day} {months[date.month-1]}, {parities[await get_parity(date)]}\. {weekdays[await get_weekday(date)]}\n"
+    result = f"{date.day} {months[date.month - 1]}, {parities[await get_parity(date)]}\. {weekdays[await get_weekday(date)]}\n"
     if len(_list) != 0:
         result += f"{len(_list)} пар\(ы\):\n"
         _list.sort(key=lambda x: x.begin_time)
@@ -51,3 +52,35 @@ async def stringify_schedule_list(_list: list[ScheduleView], date=dt.datetime.to
         result += "Нет пар\."
 
     return result
+
+
+async def get_datetime_from_callback(callback_query: types.CallbackQuery):
+    day, month, parity, weekday = callback_query.message.text.split()[:4]
+    month = months.index(month[:-1])
+    parity = parities.index(parity[:-1])
+    weekday = weekdays.index(weekday)
+
+    year = dt.date.today().year
+    month = month if month >= 10 else "0" + str(month)
+    day = day if len(day) == 2 else "0" + str(day)
+    date = dt.date.fromisoformat(str(year) + "-" + str(month + 1) + "-" + str(day))
+
+    if callback_query.data == "next":
+        date += dt.timedelta(days=1)
+        if weekday == 6:
+            weekday = 0
+            parity = not parity
+        else:
+            weekday += 1
+    else:
+        date += dt.timedelta(days=-1)
+        if weekday == 0:
+            weekday = 6
+            parity = not parity
+        else:
+            weekday -= 1
+
+    weekday += 1  # because in bd they are 1-7
+    parity += 1  # same because 1-2 in bd
+
+    return date, day, month, parity, weekday
