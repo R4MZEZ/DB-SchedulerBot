@@ -42,11 +42,12 @@ async def stringify_schedule_list(_list: list[ScheduleView], date=dt.datetime.to
     if len(_list) != 0:
         result += f"{len(_list)} пар\(ы\):\n"
         _list.sort(key=lambda x: x.begin_time)
+
         for lesson in _list:
             result += f"{lesson.begin_time.strftime('%H:%M')}\-" \
                       f"{lesson.end_time.strftime('%H:%M')} \- *{lesson.discipline}*\n" \
                       f"{lesson.teacher_surname} {lesson.teacher_name} {lesson.teacher_patronymic}\n"
-            classroom = "ауд\." + str(lesson.classroom) if lesson.classroom != 0 else "Онлайн"
+            classroom = f"ауд\. {str(lesson.classroom)}, {lesson.campus}" if lesson.classroom != 0 else "Онлайн"
             result += classroom + "\n\n"
     else:
         result += "Нет пар\."
@@ -54,18 +55,37 @@ async def stringify_schedule_list(_list: list[ScheduleView], date=dt.datetime.to
     return result
 
 
+async def stringify_raw_list(_list: list) -> str:
+    result = ""
+    if len(_list) != 0:
+        result += f"{len(_list)} доступных вариантов\(а\):\n"
+        _list.sort(key=lambda x: x.begin_time)
+
+        count = 0
+        for option in _list:
+            result += f"{count}\. {option.begin_time.strftime('%H:%M')}\-" \
+                      f"{option.end_time.strftime('%H:%M')} \- "
+            classroom = f"*ауд\. {str(option.classroom)}*, {option.campus}" if option.classroom != 0 else "Онлайн"
+            result += classroom + "\n"
+            count += 1
+    else:
+        result += "Нет доступных вариантов на этот день\."
+
+    return result
+
+
 async def get_datetime_from_callback(callback_query: types.CallbackQuery):
     day, month, parity, weekday = callback_query.message.text.split()[:4]
-    month = months.index(month[:-1])
+    month = months.index(month[:-1]) + 1
     parity = parities.index(parity[:-1])
     weekday = weekdays.index(weekday)
 
     year = dt.date.today().year
     month = month if month >= 10 else "0" + str(month)
     day = day if len(day) == 2 else "0" + str(day)
-    date = dt.date.fromisoformat(str(year) + "-" + str(month + 1) + "-" + str(day))
+    date = dt.date.fromisoformat(str(year) + "-" + str(month) + "-" + str(day))
 
-    if callback_query.data == "next":
+    if callback_query.data[:4] == "next":
         date += dt.timedelta(days=1)
         if weekday == 6:
             weekday = 0
@@ -83,4 +103,4 @@ async def get_datetime_from_callback(callback_query: types.CallbackQuery):
     weekday += 1  # because in bd they are 1-7
     parity += 1  # same because 1-2 in bd
 
-    return date, day, month, parity, weekday
+    return date

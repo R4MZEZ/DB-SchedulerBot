@@ -16,9 +16,22 @@ def get_default_teacher_kb():
     return kb
 
 
-def get_next_prev_keyboard():
+def get_teacher_next_prev_keyboard():
     kb = InlineKeyboardMarkup(row_width=2)
-    kb.row(InlineKeyboardButton("<", callback_data='prev'),
-           InlineKeyboardButton(">", callback_data='next'))
+    kb.row(InlineKeyboardButton("<", callback_data='prev_teacher'),
+           InlineKeyboardButton(">", callback_data='next_teacher'))
+    return kb
 
+
+def get_stud_next_prev_keyboard():
+    kb = InlineKeyboardMarkup(row_width=2)
+    kb.row(InlineKeyboardButton("<", callback_data='prev_stud'),
+           InlineKeyboardButton(">", callback_data='next_stud'))
+    return kb
+
+
+def get_kb_from_list(_list):
+    kb = ReplyKeyboardMarkup(row_width=4,resize_keyboard=True)
+    for val in _list:
+        kb.insert(KeyboardButton(val))
     return kb
