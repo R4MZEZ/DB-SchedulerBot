@@ -94,8 +94,9 @@ class Schedule(Base):
 
 
 class ScheduleView(Base):
-    __tablename__ = "schedule_view"
+    __tablename__ = "schedule_view_"
 
+    id = Column("id", Integer)
     classroom = Column("classroom", String)
     campus = Column("campus", String)
     discipline = Column("discipline", String)
@@ -105,7 +106,7 @@ class ScheduleView(Base):
     group = Column("group", String)
     begin_time = Column("begin_time", Time)
     end_time = Column("end_time", Time)
-    weekday = Column("week_day", Integer)
+    week_day = Column("week_day", Integer)
     parity = Column("parity", Integer, default=2)
     lesson_date = Column("lesson_date", Date, primary_key=True)
 

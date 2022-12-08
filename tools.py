@@ -37,20 +37,46 @@ async def get_parity(date=dt.datetime.today()) -> int:
     return date.isocalendar()[1] % 2
 
 
-async def stringify_schedule_list(_list: list[ScheduleView], date=dt.datetime.today()) -> str:
+async def stringify_lesson(lesson: ScheduleView, for_teacher: bool) -> str:
+    if for_teacher:
+        lesson_str = f"{parities[lesson.parity - 1]}\. {weekdays[lesson.week_day - 1]}\n"
+    else:
+        lesson_str = ""
+
+    lesson_str += f"{lesson.begin_time.strftime('%H:%M')}\-" \
+                 f"{lesson.end_time.strftime('%H:%M')} \- *{lesson.discipline}*\n"
+    if for_teacher:
+        lesson_str += f"гр\. {lesson.group}\n"
+    else:
+        lesson_str += f"{lesson.teacher_surname} {lesson.teacher_name} {lesson.teacher_patronymic}\n"
+    classroom = f"ауд\. {str(lesson.classroom)}, {lesson.campus}" if lesson.classroom != 0 else "Онлайн"
+    lesson_str += classroom + "\n\n"
+    return lesson_str
+
+
+async def stringify_daily_schedule_list(_list: list[ScheduleView], date=dt.datetime.today()) -> str:
     result = f"{date.day} {months[date.month - 1]}, {parities[await get_parity(date)]}\. {weekdays[await get_weekday(date)]}\n"
     if len(_list) != 0:
         result += f"{len(_list)} пар\(ы\):\n"
         _list.sort(key=lambda x: x.begin_time)
 
         for lesson in _list:
-            result += f"{lesson.begin_time.strftime('%H:%M')}\-" \
-                      f"{lesson.end_time.strftime('%H:%M')} \- *{lesson.discipline}*\n" \
-                      f"{lesson.teacher_surname} {lesson.teacher_name} {lesson.teacher_patronymic}\n"
-            classroom = f"ауд\. {str(lesson.classroom)}, {lesson.campus}" if lesson.classroom != 0 else "Онлайн"
-            result += classroom + "\n\n"
+            result += await stringify_lesson(lesson, False)
     else:
         result += "Нет пар\."
+
+    return result
+
+
+async def stringify_schedule_list(_list: list[ScheduleView]) -> str:
+    if len(_list) != 0:
+        result = f"У вас {len(_list)} занятия\(ий\) в расписании:\n"
+        _list.sort(key=lambda x: x.week_day)
+        for lesson in _list:
+            result += f"{_list.index(lesson)}\. "
+            result += await stringify_lesson(lesson, True)
+    else:
+        result = "У вас нет занятий в расписании."
 
     return result
 
